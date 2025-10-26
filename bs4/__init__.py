@@ -48,7 +48,22 @@ __all__ = [
     "MarkupResemblesLocatorWarning",
     "UnusualUsageWarning",
     "XMLParsedAsHTMLWarning",
+    "SoupReplacer",
 ]
+class SoupReplacer:
+    """
+    During-parsing tag replacer. Maps every occurrence of `og_tag` to `alt_tag`.
+    """
+    def __init__(self, og_tag, alt_tag):
+        # HTML 解析器通常會把 tag name 正規化成小寫
+        self.og = (og_tag or "").strip().lower()
+        self.alt = (alt_tag or "").strip().lower()
+
+    def translate(self, tag_name: str) -> str:
+        if not tag_name:
+            return tag_name
+        return self.alt if tag_name.lower() == self.og else tag_name
+
 
 from collections import Counter
 import sys
@@ -161,6 +176,7 @@ class BeautifulSoup(Tag):
     handle_endtag.
     """
 
+
     #: Since `BeautifulSoup` subclasses `Tag`, it's possible to treat it as
     #: a `Tag` with a `Tag.name`. Hoever, this name makes it clear the
     #: `BeautifulSoup` object isn't a real markup tag.
@@ -267,6 +283,7 @@ class BeautifulSoup(Tag):
          TreeBuilder by passing in arguments, not just by saying which
          one to use.
         """
+        self.replacer = kwargs.pop("replacer", None)
         if "convertEntities" in kwargs:
             del kwargs["convertEntities"]
             warnings.warn(
@@ -1015,6 +1032,8 @@ class BeautifulSoup(Tag):
 
         :meta private:
         """
+        if getattr(self, "replacer", None):
+            name = self.replacer.translate(name)
         # print("Start tag %s: %s" % (name, attrs))
         self.endData()
 
@@ -1058,6 +1077,8 @@ class BeautifulSoup(Tag):
 
         :meta private:
         """
+        if getattr(self, "replacer", None):
+            name = self.replacer.translate(name)
         # print("End tag: " + name)
         self.endData()
         self._popToTag(name, nsprefix)
