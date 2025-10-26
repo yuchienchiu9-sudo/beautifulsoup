@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, SoupStrainer
 import sys, pathlib, urllib.parse
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')  # or 'backslashreplace'
 
 def main():
     if len(sys.argv) < 3:

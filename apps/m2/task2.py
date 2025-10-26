@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, SoupStrainer
 
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')  # or 'backslashreplace'
 
 
 def pick_parser(p: Path) -> str:
