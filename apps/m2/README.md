@@ -54,14 +54,40 @@ select() and select_one() are also imported from bs4/css.py, but the main public
 
 All line numbers are based on the unmodified BeautifulSoup v4.13.0 source code.
 
-## Part-3
+## Part-3 SoupReplacer API
 ### Task 6 — SoupReplacer
+New API: SoupReplacer(og_tag, alt_tag)
+Replaces all occurrences of og_tag with alt_tag during parsing, avoiding the need to traverse the parse tree afterward.
 
-Run the program on an HTML file:
+Usage Example
+
+A simple demonstration of the new API functionality:
+
+Create and run:
+```bash
+cd Milestone-2/beautifulsoup
+python test_replacer_demo.py
+```
+Unit Testing
+All automated tests are located in bs4/tests/.
+
+Run all tests for this feature:
+
+```bash
+cd Milestone-2/beautifulsoup
+python -m unittest discover -s bs4/tests -t . -p "test_replacer_*.py" -v
+```
+
+
+Application Program (Task-6 Integration)
+
+A new application script was added to demonstrate SoupReplacer applied to a full HTML file.
+
+Run it from the project root:
+
 ```bash
 cd Milestone-2/beautifulsoup/apps/m2
-python task6.py <input.html>
+python task6_replacer.py "United States - Wikipedia.html" b blockquote > out.html
 ```
-Notes:
-On Windows, use UTF-8 mode to avoid encoding errors:
-python -X utf8 task6.py
+
+
