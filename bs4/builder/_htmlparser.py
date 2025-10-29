@@ -86,9 +86,12 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
         soup: BeautifulSoup,
         *args: Any,
         on_duplicate_attribute: Union[str, _DuplicateAttributeHandler] = REPLACE,
+        replacer=None,     
         **kwargs: Any,
     ):
+        super().__init__(**kwargs)
         self.soup = soup
+        self._replacer = replacer
         self.on_duplicate_attribute = on_duplicate_attribute
         self.attribute_dict_class = soup.builder.attribute_dict_class
         HTMLParser.__init__(self, *args, **kwargs)
@@ -127,15 +130,19 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
     def handle_startendtag(
         self, name: str, attrs: List[Tuple[str, Optional[str]]]
     ) -> None:
+        if self._replacer:
+            name = self._replacer.translate(name)
         """Handle an incoming empty-element tag.
 
         html.parser only calls this method when the markup looks like
         <tag/>.
         """
+
         # `handle_empty_element` tells handle_starttag not to close the tag
         # just because its name matches a known empty-element tag. We
         # know that this is an empty-element tag, and we want to call
         # handle_endtag ourselves.
+        
         self.handle_starttag(name, attrs, handle_empty_element=False)
         self.handle_endtag(name)
 
@@ -145,6 +152,9 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
         attrs: List[Tuple[str, Optional[str]]],
         handle_empty_element: bool = True,
     ) -> None:
+        if self._replacer:
+            name = self._replacer.translate(name)
+
         """Handle an opening tag, e.g. '<tag>'
 
         :param handle_empty_element: True if this tag is known to be
@@ -202,6 +212,8 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
             self._root_tag_encountered(name)
 
     def handle_endtag(self, name: str, check_already_closed: bool = True) -> None:
+        if self._replacer:
+            name = self._replacer.translate(name)
         """Handle a closing tag, e.g. '</tag>'
 
         :param name: A tag name.
@@ -350,16 +362,11 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
         parser_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
-        """Constructor.
+        
+        super().__init__(**kwargs)
+        self._replacer = None   
 
-        :param parser_args: Positional arguments to pass into
-            the BeautifulSoupHTMLParser constructor, once it's
-            invoked.
-        :param parser_kwargs: Keyword arguments to pass into
-            the BeautifulSoupHTMLParser constructor, once it's
-            invoked.
-        :param kwargs: Keyword arguments for the superclass constructor.
-        """
+    
         # Some keyword arguments will be pulled out of kwargs and placed
         # into parser_kwargs.
         extra_parser_kwargs = dict()
@@ -373,6 +380,9 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
         parser_kwargs.update(extra_parser_kwargs)
         parser_kwargs["convert_charrefs"] = False
         self.parser_args = (parser_args, parser_kwargs)
+    
+    def set_replacer(self, replacer):  
+        self._replacer = replacer
 
     def prepare_markup(
         self,
@@ -461,7 +471,7 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
         # before calling feed(), so we can assume self.soup
         # is set.
         assert self.soup is not None
-        parser = BeautifulSoupHTMLParser(self.soup, *args, **kwargs)
+        parser = BeautifulSoupHTMLParser(self.soup, *args, **kwargs,replacer=self._replacer)
 
         try:
             parser.feed(markup)

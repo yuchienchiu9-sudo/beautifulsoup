@@ -50,21 +50,6 @@ __all__ = [
     "XMLParsedAsHTMLWarning",
     "SoupReplacer",
 ]
-class SoupReplacer:
-    """
-    During-parsing tag replacer. Maps every occurrence of `og_tag` to `alt_tag`.
-    """
-    def __init__(self, og_tag, alt_tag):
-        # HTML 解析器通常會把 tag name 正規化成小寫
-        self.og = (og_tag or "").strip().lower()
-        self.alt = (alt_tag or "").strip().lower()
-
-    def translate(self, tag_name: str) -> str:
-        if not tag_name:
-            return tag_name
-        return self.alt if tag_name.lower() == self.og else tag_name
-
-
 from collections import Counter
 import sys
 import warnings
@@ -107,6 +92,7 @@ from .filter import (
     ElementFilter,
     SoupStrainer,
 )
+from .soup_replacer import SoupReplacer
 from typing import (
     Any,
     cast,
@@ -223,6 +209,7 @@ class BeautifulSoup(Tag):
     contains_replacement_characters: bool
 
     def __init__(
+            
         self,
         markup: _IncomingMarkup = "",
         features: Optional[Union[str, Sequence[str]]] = None,
@@ -390,6 +377,7 @@ class BeautifulSoup(Tag):
         # with the remaining **kwargs.
         if builder is None:
             builder = builder_class(**kwargs)
+
             if (
                 not original_builder
                 and not (
@@ -448,6 +436,8 @@ class BeautifulSoup(Tag):
                 )
 
         self.builder = builder
+        if hasattr(self.builder, "set_replacer"):
+            self.builder.set_replacer(self.replacer)
         self.is_xml = builder.is_xml
         self.known_xml = self.is_xml
         self._namespaces = dict()
@@ -1189,3 +1179,4 @@ if __name__ == "__main__":
 
     soup = BeautifulSoup(sys.stdin)
     print((soup.prettify()))
+from .soup_replacer import SoupReplacer  # 讓你可以 from bs4 import SoupReplacer
