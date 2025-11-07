@@ -37,13 +37,14 @@ print(soup.prettify())
 ```bash
 cd beautifulsoup
 ```
- Run Unit Tests
-
+ 
+## Run Unit Tests
+All six required test cases for the new SoupReplacer API are implemented in: `beautifulsoup/bs4/tests/test_replacer_m3.py`
 To verify all new API behaviors:
 ```bash
 python -m unittest bs4.tests.test_replacer_m3 -t . -v
 ```
-expect to see
+## expect to see
 
 test_1_name_xformer_simple (bs4.tests.test_replacer_m3.TestSoupReplacerM3.test_1_name_xformer_simple) ... ok
 test_2_attrs_xformer_remove_class_and_style (bs4.tests.test_replacer_m3.TestSoupReplacerM3.test_2_attrs_xformer_remove_class_and_style) ... ok
@@ -52,7 +53,7 @@ test_4_all_transformers_and_order (bs4.tests.test_replacer_m3.TestSoupReplacerM3
 test_5_legacy_pair_constructor_compat (bs4.tests.test_replacer_m3.TestSoupReplacerM3.test_5_legacy_pair_constructor_compat) ... ok
 test_6_self_closing_tag_pre_post (bs4.tests.test_replacer_m3.TestSoupReplacerM3.test_6_self_closing_tag_pre_post) ... ok
 
-purpose
+## purpose
 | # | Test              | What it checks                             | Expected result                                                         |
 | - | ----------------- | ------------------------------------------ | ----------------------------------------------------------------------- |
 | 1 | name_xformer      | Can rename tags (like `<b>` → `<strong>`)  | `<strong>` appears                                                      |
