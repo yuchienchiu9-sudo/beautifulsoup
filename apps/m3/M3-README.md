@@ -8,16 +8,6 @@ The Milestone 2 API exposed a simple mapping interface (`SoupReplacer(og_tag, al
 - attrs_xformer(tag) -> dict: return replacement attributes.
 - xformer(tag) -> None: arbitrary side-effects on the Tag object.
 
-Recommendation
-- Keep the simple (og, alt) constructor for common cases and backwards compatibility.
-- Prefer the transformer API for power users who need context-sensitive changes (rename by tag, rewrite attributes, cleanup, enrichment).
-- Apply `name_xformer` both pre-creation (to align start/end names) and post-creation (final authority), with post-creation taking precedence. This preserves correctness of stack operations while still allowing context-aware adjustments.
-- Execute user transformers inside a best-effort guard to avoid breaking parsing if a transformer raises unexpectedly.
-
-Pros vs Cons
-- Pros: Expressive, single-pass transformation during parse, avoids extra tree walks, supports complex cleanup/enrichment.
-- Cons: More surface for user errors; side effects can be surprising. To mitigate, scope changes to the current tag, and document best practices.
-
 Usage Example
 ```
 def remove_class(tag):
