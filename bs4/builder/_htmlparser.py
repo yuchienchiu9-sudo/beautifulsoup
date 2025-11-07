@@ -130,8 +130,8 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
     def handle_startendtag(
         self, name: str, attrs: List[Tuple[str, Optional[str]]]
     ) -> None:
-        if self._replacer:
-            name = self._replacer.translate(name)
+        #if self._replacer:
+            #name = self._replacer.translate(name)
         """Handle an incoming empty-element tag.
 
         html.parser only calls this method when the markup looks like
@@ -152,8 +152,15 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
         attrs: List[Tuple[str, Optional[str]]],
         handle_empty_element: bool = True,
     ) -> None:
+        attrs_map = {k: (v if v is not None else "") for k, v in (attrs or [])}
         if self._replacer:
-            name = self._replacer.translate(name)
+            if hasattr(self._replacer, "transform_name_attrs"):
+                try:
+                    name, attrs_map = self._replacer.transform_name_attrs(name, attrs_map)
+                except Exception:
+                    pass
+            elif hasattr(self._replacer, "translate"):
+                name = self._replacer.translate(name)
 
         """Handle an opening tag, e.g. '<tag>'
 
@@ -162,7 +169,7 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
             closing tag).
         """
         # TODO: handle namespaces here?
-        attr_dict: AttributeDict = self.attribute_dict_class()
+        """attr_dict: AttributeDict = self.attribute_dict_class()
         for key, value in attrs:
             # Change None attribute values to the empty string
             # for consistency with the other tree builders.
@@ -181,7 +188,23 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
                     on_dupe = cast(_DuplicateAttributeHandler, on_dupe)
                     on_dupe(attr_dict, key, value)
             else:
+                attr_dict[key] = value"""
+        attr_dict: AttributeDict = self.attribute_dict_class()
+        for key, value in attrs_map.items():
+            if value is None:
+                value = ""
+            if key in attr_dict:
+                on_dupe = self.on_duplicate_attribute
+                if on_dupe == self.IGNORE:
+                    pass
+                elif on_dupe in (None, self.REPLACE):
+                    attr_dict[key] = value
+                else:
+                    on_dupe = cast(_DuplicateAttributeHandler, on_dupe)
+                    on_dupe(attr_dict, key, value)
+            else:
                 attr_dict[key] = value
+
         # print("START", name)
         sourceline: Optional[int]
         sourcepos: Optional[int]
@@ -207,6 +230,12 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
             # But we might encounter an explicit closing tag for this tag
             # later on. If so, we want to ignore it.
             self.already_closed_empty_element.append(name)
+        if tag and self._replacer and hasattr(self._replacer, "transform_tag"):
+            try:
+                self._replacer.transform_tag(tag)
+            except Exception:
+                # 使用者副作用錯誤不應中斷 parsing
+                pass
 
         if self._root_tag_name is None:
             self._root_tag_encountered(name)

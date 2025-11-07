@@ -475,7 +475,15 @@ class BeautifulSoup(Tag):
             markup, from_encoding, exclude_encodings=exclude_encodings
         ):
             self.reset()
-            self.builder.initialize_soup(self)
+            if hasattr(self.builder, "initialize_soup"):
+                try:
+                    self.builder.initialize_soup(self, replacer=self.replacer)
+                except TypeError:
+                    # 舊版 initialize_soup 不接受參數就走原本呼叫
+                    self.builder.initialize_soup(self)
+            else:
+                # 沒有 initialize_soup：直接把 replacer 掛到 builder
+                setattr(self.builder, "replacer", getattr(self, "replacer", None))
             try:
                 self._feed()
                 success = True
@@ -1022,8 +1030,19 @@ class BeautifulSoup(Tag):
 
         :meta private:
         """
+        if isinstance(attrs, list):
+            attrs = dict(attrs)
+        attrs = attrs or {}
         if getattr(self, "replacer", None):
-            name = self.replacer.translate(name)
+            if hasattr(self.replacer, "transform_name_attrs"):
+                try:
+                    name, attrs = self.replacer.transform_name_attrs(name, attrs)
+                except Exception:
+                    # 轉換失敗也不能中斷 parsing
+                    pass
+            elif hasattr(self.replacer, "translate"):
+                # 保留舊 M2 路徑
+                name = self.replacer.translate(name)
         # print("Start tag %s: %s" % (name, attrs))
         self.endData()
 
@@ -1053,6 +1072,17 @@ class BeautifulSoup(Tag):
         )
         if tag is None:
             return tag
+        # Apply optional replacer-based transformations post-creation.
+        if getattr(self, "replacer", None) and hasattr(self.replacer, "apply_on_tag"):
+            try:
+                if hasattr(self.replacer, "transform_tag"):
+                    self.replacer.transform_tag(tag)
+                elif hasattr(self.replacer, "apply_on_tag"):
+                    # 相容舊寫法
+                    self.replacer.apply_on_tag(tag)
+            except Exception:
+                # Fail-safe: do not break parsing if user-supplied transformer fails.
+                pass
         if self._most_recent_element is not None:
             self._most_recent_element.next_element = tag
         self._most_recent_element = tag
