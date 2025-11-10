@@ -33,6 +33,7 @@ All six required test cases for the new SoupReplacer API are implemented in: `be
 To verify all new API behaviors:
 ```bash
 python -m unittest bs4.tests.test_replacer_m3 -t . -v
+python -m unittest -v bs4.tests.test_replacer_m3
 ```
 ## expect to see
 
