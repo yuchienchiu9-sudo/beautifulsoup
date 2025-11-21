@@ -207,6 +207,18 @@ class BeautifulSoup(Tag):
     #: in the original markup. These mark character sequences that
     #: could not be represented in Unicode.
     contains_replacement_characters: bool
+    def __iter__(self):
+        """
+        Iterate over all nodes in the soup tree in depth-first order.
+
+        This is implemented as a generator and does NOT materialize
+        an intermediate list of nodes, satisfying the Milestone 4
+        requirement.
+        """
+        yield self
+
+        for node in self.descendants:
+            yield node
 
     def __init__(
             
